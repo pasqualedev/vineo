@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { View, Text, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { spacing } from '@/theme/spacing'
 import { type, useTheme } from '@/theme'
 import { Hero } from '@/components/ui/hero'
@@ -25,6 +25,7 @@ const MAX_DOTS = 80
  * Persiste via `useCreateCellar` e redireciona ao concluir.
  */
 export default function CreateCellarScreen() {
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const [name, setName] = useState('Adega Principal')
   const [rows, setRows] = useState(6)
   const [cols, setCols] = useState(4)
@@ -49,7 +50,11 @@ export default function CreateCellarScreen() {
         currentUserId = user.id
       }
       await createCellar.mutateAsync({ name, rows, columns: cols, userId: currentUserId })
-      router.dismissAll()
+      if (returnTo) {
+        router.replace(returnTo as Parameters<typeof router.replace>[0])
+      } else {
+        router.dismissAll()
+      }
     } finally {
       setIsSubmitting(false)
     }

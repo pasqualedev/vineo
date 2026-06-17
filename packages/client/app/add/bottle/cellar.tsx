@@ -53,7 +53,9 @@ export default function SelectCellarScreen() {
             title="Criar adega"
             variant="hero"
             chevron
-            onPress={() => router.replace('/add/cellar/setup')}
+            onPress={() =>
+              router.replace('/add/cellar/setup?returnTo=/add/bottle/cellar')
+            }
           />
         </View>
       </SafeAreaView>

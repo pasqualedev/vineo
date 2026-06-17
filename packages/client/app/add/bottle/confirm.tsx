@@ -1,4 +1,4 @@
-import { View, ScrollView, ActivityIndicator } from 'react-native'
+import { View, ScrollView, ActivityIndicator, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { useForm } from '@tanstack/react-form'
@@ -34,28 +34,36 @@ export default function ConfirmScreen() {
       const vintage = parseInt(value.vintage, 10) || new Date().getFullYear()
       const parsedPrice = value.price ? Number(value.price.replace(',', '.')) : null
 
-      await matchOrCreate.mutateAsync({
-        barcode: draft.barcode,
-        rawOcrText:
-          draft.rawOcrText ??
-          `${value.name} ${value.winery} ${value.region} ${vintage}`,
-        cellarId: draft.cellarId,
-        rowPosition: draft.row,
-        columnPosition: draft.col,
-        vintage,
-        name: value.name || null,
-        winery: value.winery || null,
-        grape: value.grape || null,
-        region: value.region || null,
-        price: parsedPrice !== null && Number.isFinite(parsedPrice) ? parsedPrice : null,
-      })
+      try {
+        await matchOrCreate.mutateAsync({
+          barcode: draft.barcode,
+          rawOcrText:
+            draft.rawOcrText ??
+            `${value.name} ${value.winery} ${value.region} ${vintage}`,
+          cellarId: draft.cellarId,
+          rowPosition: draft.row,
+          columnPosition: draft.col,
+          vintage,
+          name: value.name || null,
+          winery: value.winery || null,
+          grape: value.grape || null,
+          region: value.region || null,
+          price: parsedPrice !== null && Number.isFinite(parsedPrice) ? parsedPrice : null,
+        })
+      } catch {
+        Alert.alert(
+          'Não foi possível salvar',
+          'Verifique sua conexão e tente novamente.',
+        )
+        return
+      }
 
       reset()
       router.replace('/add/bottle/success')
     },
   })
 
-  if (!draft.cellarId) {
+  if (draft.cellarId == null || draft.row == null || draft.col == null) {
     return (
       <SafeAreaView
         style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}
