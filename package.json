@@ -1,0 +1,31 @@
+{
+  "name": "vineo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bash scripts/dev.sh",
+    "dev:mobile": "turbo dev --filter=@vineo/mobile",
+    "dev:api": "turbo dev --filter=@vineo/api",
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f db",
+    "db:push": "npm run db:push --workspace=@vineo/api",
+    "db:reset": "docker compose down -v && docker compose up -d --wait db && npm run db:push --workspace=@vineo/api",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck"
+  },
+  "overrides": {
+    "react": "19.2.3"
+  },
+  "devDependencies": {
+    "turbo": "^2.9.18",
+    "typescript": "^6.0.3",
+    "@types/react": "^19.0.0"
+  },
+  "packageManager": "npm@10.8.0",
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0"
+  }
+}

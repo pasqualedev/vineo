@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Víneo",
+    "slug": "caveflow",
+    "scheme": "caveflow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#141210"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.vineo.caveflow",
+      "infoPlist": {
+        "NSCameraUsageDescription": "O Víneo precisa da câmera para escanear códigos de barras e rótulos de vinho."
+      }
+    },
+    "android": {
+      "package": "com.vineo.caveflow",
+      "adaptiveIcon": {
+        "backgroundColor": "#141210"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O Víneo precisa da câmera para escanear códigos de barras e rótulos de vinho."
+        }
+      ]
+    ]
+  }
+}

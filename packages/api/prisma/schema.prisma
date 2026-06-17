@@ -1,0 +1,66 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum BottleStatus {
+  STORED
+  CONSUMED
+  GIFTED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  cellars   Cellar[]
+  createdAt DateTime @default(now())
+}
+
+model Cellar {
+  id        String   @id @default(uuid())
+  name      String
+  rows      Int
+  columns   Int
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bottles   Bottle[]
+  createdAt DateTime @default(now())
+}
+
+model WineReference {
+  id        String   @id @default(uuid())
+  name      String
+  winery    String
+  grape     String
+  region    String
+  country   String
+  barcode   String?  @unique
+  guardMin  Int      @default(2)
+  guardMax  Int      @default(8)
+  bottles   Bottle[]
+
+  @@index([name, winery])
+}
+
+model Bottle {
+  id              String         @id @default(uuid())
+  vintage         Int
+  purchaseDate    DateTime?
+  price           Decimal?       @db.Decimal(10, 2)
+  rowPosition     Int
+  columnPosition  Int
+  status          BottleStatus   @default(STORED)
+  consumedAt      DateTime?
+  notes           String?        @db.Text
+  cellarId        String
+  cellar          Cellar         @relation(fields: [cellarId], references: [id], onDelete: Cascade)
+  wineReferenceId String
+  wineReference   WineReference  @relation(fields: [wineReferenceId], references: [id])
+  createdAt       DateTime       @default(now())
+
+  @@unique([cellarId, rowPosition, columnPosition])
+}
