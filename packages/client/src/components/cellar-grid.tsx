@@ -16,9 +16,11 @@ interface CellarGridProps {
   rows: number
   columns: number
   bottles: BottleResponse[]
+  /** Quando fornecido, tocar num slot vazio chama isto em vez de navegar pro /add. */
+  onSelectEmpty?: (row: number, column: number) => void
 }
 
-export function CellarGrid({ cellarId, rows, columns, bottles }: CellarGridProps) {
+export function CellarGrid({ cellarId, rows, columns, bottles, onSelectEmpty }: CellarGridProps) {
   const router = useRouter()
   const scheme = useColorScheme() ?? 'dark'
   const rack = rackColors[scheme === 'dark' ? 'dark' : 'light']
@@ -37,9 +39,13 @@ export function CellarGrid({ cellarId, rows, columns, bottles }: CellarGridProps
   function handleCellPress(row: number, column: number, bottle?: BottleResponse) {
     if (bottle) {
       router.push(`/bottle/${bottle.id}`)
-    } else {
-      router.push(`/add?cellarId=${cellarId}&row=${row}&col=${column}`)
+      return
     }
+    if (onSelectEmpty) {
+      onSelectEmpty(row, column)
+      return
+    }
+    router.push(`/add/bottle/capture?cellarId=${cellarId}&row=${row}&col=${column}`)
   }
 
   return (
