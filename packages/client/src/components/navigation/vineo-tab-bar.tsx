@@ -1,10 +1,12 @@
 import { View, Pressable, Text, type ColorValue } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { Tabs, useRouter } from 'expo-router'
 import * as Haptics from 'expo-haptics'
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs'
 import { type, useTheme } from '@/theme'
 import { HomeIcon, CellarIcon } from '@/components/tab-icons'
+
+/** Props received by a custom tabBar renderer passed to expo-router's Tabs. */
+type BottomTabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>>[0]
 
 const FAB_SIZE = 60
 const BAR_HEIGHT = 64
