@@ -7,7 +7,7 @@ import { router, useLocalSearchParams } from 'expo-router'
 import { spacing } from '@/theme/spacing'
 import { type, useTheme } from '@/theme'
 import { Button } from '@/components/ui/button'
-import { useAddBottleDraft, type AddBottleDraft } from '@/lib/add-bottle-draft'
+import { useAddBottleDraft } from '@/lib/add-bottle-draft'
 
 const BARCODE_TIMEOUT = 3000
 
@@ -22,7 +22,7 @@ export default function CaptureScreen() {
 
   // Hidrata o draft quando a câmera é aberta a partir de um slot do grid.
   useEffect(() => {
-    const patch: Partial<AddBottleDraft> = {}
+    const patch: { cellarId?: string; row?: number; col?: number } = {}
     if (params.cellarId) patch.cellarId = params.cellarId
     if (params.row != null) patch.row = parseInt(params.row, 10)
     if (params.col != null) patch.col = parseInt(params.col, 10)
