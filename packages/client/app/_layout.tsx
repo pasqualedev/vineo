@@ -32,7 +32,16 @@ function RootLayoutInner() {
           headerShown: false,
           contentStyle: { backgroundColor: colors.bg },
         }}
-      />
+      >
+        <Stack.Screen
+          name="add-menu"
+          options={{
+            presentation: 'transparentModal',
+            animation: 'fade',
+            headerShown: false,
+          }}
+        />
+      </Stack>
     </GestureHandlerRootView>
   )
 }
