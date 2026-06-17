@@ -1,28 +1,30 @@
-import { View, Pressable, Text, type ColorValue } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Tabs, useRouter } from 'expo-router'
-import * as Haptics from 'expo-haptics'
-import { type, useTheme } from '@/theme'
-import { HomeIcon, CellarIcon } from '@/components/tab-icons'
+import { View, Pressable, Text, type ColorValue } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Tabs, useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
+import { type, useTheme } from "@/theme";
+import { HomeIcon, CellarIcon } from "@/components/tab-icons";
 
 /** Props received by a custom tabBar renderer passed to expo-router's Tabs. */
-type BottomTabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>>[0]
+type BottomTabBarProps = Parameters<
+  NonNullable<React.ComponentProps<typeof Tabs>["tabBar"]>
+>[0];
 
-const FAB_SIZE = 60
-const BAR_HEIGHT = 64
-const ICON_SIZE = 24
+const FAB_SIZE = 60;
+const BAR_HEIGHT = 64;
+const ICON_SIZE = 24;
 
-const TAB_LABELS: Record<string, string> = {
-  index: 'Início',
-  cellar: 'Adega',
-}
+const TAB_LABELS: Readonly<Record<string, string>> = {
+  index: "Início",
+  cellar: "Adega",
+};
 
 function PlusIcon({ color, size = 24 }: { color: ColorValue; size?: number }) {
   return (
     <View style={{ width: size, height: size }}>
       <View
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           right: 0,
           top: (size - 2) / 2,
@@ -33,7 +35,7 @@ function PlusIcon({ color, size = 24 }: { color: ColorValue; size?: number }) {
       />
       <View
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: 0,
           bottom: 0,
           left: (size - 2) / 2,
@@ -43,7 +45,7 @@ function PlusIcon({ color, size = 24 }: { color: ColorValue; size?: number }) {
         }}
       />
     </View>
-  )
+  );
 }
 
 /**
@@ -51,44 +53,45 @@ function PlusIcon({ color, size = 24 }: { color: ColorValue; size?: number }) {
  * circular flutuante que abre o modal de adição.
  */
 export function VineoTabBar({ state, navigation }: BottomTabBarProps) {
-  const { colors } = useTheme()
-  const insets = useSafeAreaInsets()
-  const router = useRouter()
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   function openAddMenu() {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    router.push('/add-menu')
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push("/add-menu");
   }
 
   return (
     <View
       style={{
-        flexDirection: 'row',
+        flexDirection: "row",
         backgroundColor: colors.surface,
         borderTopWidth: 1,
         borderTopColor: colors.border,
         height: BAR_HEIGHT + insets.bottom,
         paddingBottom: insets.bottom,
         paddingTop: 8,
+        overflow: "visible",
       }}
     >
       {state.routes.map((route, index) => {
-        const isFocused = state.index === index
-        const tint = isFocused ? colors.accent : colors.textMuted
-        const label = TAB_LABELS[route.name] ?? route.name
+        const isFocused = state.index === index;
+        const tint = isFocused ? colors.accent : colors.textMuted;
+        const label = TAB_LABELS[route.name] ?? route.name;
 
         function onPress() {
           const event = navigation.emit({
-            type: 'tabPress',
+            type: "tabPress",
             target: route.key,
             canPreventDefault: true,
-          })
+          });
           if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name)
+            navigation.navigate(route.name);
           }
         }
 
-        const Icon = route.name === 'index' ? HomeIcon : CellarIcon
+        const Icon = route.name === "index" ? HomeIcon : CellarIcon;
 
         return (
           <Pressable
@@ -97,22 +100,24 @@ export function VineoTabBar({ state, navigation }: BottomTabBarProps) {
             accessibilityRole="tab"
             accessibilityState={{ selected: isFocused }}
             accessibilityLabel={label}
-            style={{ flex: 1, alignItems: 'center', gap: 2 }}
+            style={{ flex: 1, alignItems: "center", gap: 2 }}
           >
             <Icon color={tint} size={ICON_SIZE} />
-            <Text style={{ ...type.label, fontSize: 11, color: tint }}>{label}</Text>
+            <Text style={{ ...type.label, fontSize: 11, color: tint }}>
+              {label}
+            </Text>
           </Pressable>
-        )
+        );
       })}
 
       <View
         pointerEvents="box-none"
         style={{
-          position: 'absolute',
+          position: "absolute",
           left: 0,
           right: 0,
           top: -FAB_SIZE / 2,
-          alignItems: 'center',
+          alignItems: "center",
         }}
       >
         <Pressable
@@ -124,9 +129,9 @@ export function VineoTabBar({ state, navigation }: BottomTabBarProps) {
             height: FAB_SIZE,
             borderRadius: FAB_SIZE / 2,
             backgroundColor: colors.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: '#000',
+            alignItems: "center",
+            justifyContent: "center",
+            shadowColor: "#000",
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.18,
             shadowRadius: 8,
@@ -137,5 +142,5 @@ export function VineoTabBar({ state, navigation }: BottomTabBarProps) {
         </Pressable>
       </View>
     </View>
-  )
+  );
 }
