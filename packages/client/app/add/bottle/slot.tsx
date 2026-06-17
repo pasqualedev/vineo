@@ -24,7 +24,7 @@ export default function SelectSlotScreen() {
 
   if (loadingCellar || loadingBottles || !cellar) {
     return (
-      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={colors.accent} />
       </SafeAreaView>
     )
@@ -33,7 +33,7 @@ export default function SelectSlotScreen() {
   const available = countAvailableSlots(cellar.rows, cellar.columns, bottles ?? [])
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'bottom']}>
       <View style={{ padding: spacing.xxl, gap: spacing.sm }}>
         <Hero eyebrow="PASSO 3 DE 4" title="Onde guardar?" />
       </View>
