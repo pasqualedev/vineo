@@ -67,10 +67,11 @@ haptics e animação, mantendo tudo num componente focado.
   (`durations.base`, `easings.outExpo`).
 - Dois **cards grandes empilhados** (mobile-first), usando `Card` interactive.
   Cada card tem:
-  - **Área de imagem reservada** (placeholder com borda hairline + label
-    discreta "imagem") — o usuário criará as ilustrações depois e as colocará
-    em `packages/client/assets/illustrations/`. Um componente
-    `IllustrationPlaceholder` renderiza o placeholder enquanto o asset não existe.
+  - **Ilustração** real (assets já fornecidos): `assets/bottle.png` (garrafa
+    com rótulo Víneo) e `assets/cellar.png` (adega/frigobar aberto). As imagens
+    têm fundo claro, então são exibidas dentro de um container claro arredondado
+    (componente reutilizável `WineIllustration`) para parecerem intencionais
+    sobre o tema escuro.
   - Rótulo: "Adicionar garrafa" / "Adicionar adega".
 - Ações: garrafa → `router.replace('/add/bottle/cellar')`; adega →
   `router.replace('/add/cellar/setup')`.
@@ -101,8 +102,9 @@ haptics e animação, mantendo tudo num componente focado.
 - **`bottle/confirm.tsx`** — formulário **editorial** (migra o form denso do
   `confirm.tsx` atual para `EditorialInput`, estilo onboarding), pré-preenchido
   com dados de OCR quando houver. Submit → `useMatchOrCreateBottle` (mesma
-  chamada `match-or-create` de hoje) → **tela de sucesso curta** → navega para
-  a adega (`/(tabs)/cellar`).
+  chamada `match-or-create` de hoje) → **tela de sucesso curta** (usa a
+  ilustração `assets/cup.png` via `WineIllustration`) → navega para a adega
+  (`/(tabs)/cellar`).
 
 ### 5. Wizard "Adicionar adega" (`cellar/setup.tsx`)
 
@@ -121,8 +123,12 @@ app/add/
   bottle/capture.tsx   passo 2 — câmera (migra index.tsx atual)
   bottle/slot.tsx      passo 3 — selecionar slot
   bottle/confirm.tsx   passo 4 — confirmar dados (migra confirm.tsx atual)
+  bottle/success.tsx   tela de sucesso (ilustração cup.png)
   cellar/setup.tsx     wizard de adega
 ```
+
+> Logos `assets/logo-dark.png` / `assets/logo-light.png` também foram fornecidas,
+> mas ficam fora deste escopo (YAGNI) — uso futuro em headers/onboarding.
 
 - O `cellar-grid` continua disparando a adição ao tocar num slot vazio, agora
   apontando para o novo fluxo (`/add/bottle/...`) com o slot já pré-preenchido
@@ -159,13 +165,14 @@ app/add/
 **Novos**
 ```
 packages/client/src/components/navigation/vineo-tab-bar.tsx
-packages/client/src/components/ui/illustration-placeholder.tsx
+packages/client/src/components/ui/wine-illustration.tsx
 packages/client/app/add/_layout.tsx
 packages/client/app/add/menu.tsx
 packages/client/app/add/bottle/cellar.tsx
 packages/client/app/add/bottle/capture.tsx
 packages/client/app/add/bottle/slot.tsx
 packages/client/app/add/bottle/confirm.tsx
+packages/client/app/add/bottle/success.tsx
 packages/client/app/add/cellar/setup.tsx
 packages/client/src/lib/add-bottle-draft.tsx          (context + tipos)
 packages/shared/src/lib/slots.ts                       (lógica pura testável)
