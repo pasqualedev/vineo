@@ -37,16 +37,23 @@ export default function ConfirmBottleScreen() {
       vintage: new Date().getFullYear(),
       price: '',
     },
-    onSubmit: async (values) => {
+    onSubmit: async ({ value }) => {
       if (!cellarId || !row || !col) return
+
+      const parsedPrice = value.price ? Number(value.price.replace(',', '.')) : null
 
       await matchOrCreate.mutateAsync({
         barcode: barcode ?? null,
-        rawOcrText: `${values.value.name} ${values.value.winery} ${values.value.region} ${values.value.vintage}`,
+        rawOcrText: `${value.name} ${value.winery} ${value.region} ${value.vintage}`,
         cellarId,
         rowPosition: parseInt(row, 10),
         columnPosition: parseInt(col, 10),
-        vintage: values.value.vintage,
+        vintage: value.vintage,
+        name: value.name || null,
+        winery: value.winery || null,
+        grape: value.grape || null,
+        region: value.region || null,
+        price: parsedPrice !== null && Number.isFinite(parsedPrice) ? parsedPrice : null,
       })
 
       router.back()

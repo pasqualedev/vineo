@@ -8,6 +8,7 @@ export type {
   EvolutionStatus,
   MatchOrCreateInput,
   MoveBottleInput,
+  UpdateBottleStatusInput,
   BottleResponse,
 } from '../schemas/bottle'
 

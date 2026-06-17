@@ -1,11 +1,28 @@
-import type { FastifyPluginAsync } from 'fastify'
-import { matchOrCreateSchema, moveBottleSchema } from '@vineo/shared'
-import { calculateEvolution } from '../lib/evolution'
+import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
+import { Prisma } from '@prisma/client'
+import { z } from 'zod'
+import {
+  matchOrCreateSchema,
+  moveBottleSchema,
+  updateBottleStatusSchema,
+  getGuardRule,
+} from '@vineo/shared'
+import { formatBottleResponse } from '../lib/format-bottle'
+
+const cellarParamsSchema = z.object({ cellarId: z.string().uuid() })
+const bottleParamsSchema = z.object({ id: z.string().uuid() })
+
+/** Postgres unique-constraint violation raised by Prisma. */
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'
+  )
+}
 
 const bottlesRoutes: FastifyPluginAsync = async (server) => {
-  // GET /api/cellars/:id/bottles
+  // GET /api/cellars/:cellarId/bottles
   server.get('/api/cellars/:cellarId/bottles', async (request, reply) => {
-    const { cellarId } = request.params as { cellarId: string }
+    const { cellarId } = cellarParamsSchema.parse(request.params)
 
     const cellar = await server.prisma.cellar.findUnique({
       where: { id: cellarId },
@@ -49,64 +66,51 @@ const bottlesRoutes: FastifyPluginAsync = async (server) => {
       return reply.status(409).send({ error: 'Position already occupied' })
     }
 
-    let wineReference = null
-
-    if (body.barcode) {
-      wineReference = await server.prisma.wineReference.findUnique({
-        where: { barcode: body.barcode },
-      })
-    }
-
-    if (!wineReference && body.rawOcrText) {
-      const words = body.rawOcrText.split(' ').filter(Boolean).join(' & ')
-      const matches = await server.prisma.$queryRawUnsafe<Array<{ id: string; similarity: number }>>(
-        `SELECT id, similarity(name, $1) as sim
-         FROM "WineReference"
-         WHERE name % $1
-         ORDER BY sim DESC
-         LIMIT 1`,
-        body.rawOcrText,
-      )
-
-      if (matches.length > 0 && matches[0].similarity > 0.3) {
-        wineReference = await server.prisma.wineReference.findUnique({
-          where: { id: matches[0].id },
-        })
-      }
-    }
+    let wineReference = await resolveWineReference(server, body)
 
     if (!wineReference) {
+      const grape = body.grape ?? 'Unknown'
+      const guard = getGuardRule(grape)
+
       wineReference = await server.prisma.wineReference.create({
         data: {
-          name: body.rawOcrText || 'Custom Wine',
-          winery: 'Unknown',
-          grape: 'Unknown',
-          region: 'Unknown',
-          country: 'Unknown',
+          name: body.name ?? body.rawOcrText ?? 'Custom Wine',
+          winery: body.winery ?? 'Unknown',
+          grape,
+          region: body.region ?? 'Unknown',
+          country: body.country ?? 'Unknown',
           barcode: body.barcode || null,
-          guardMin: 2,
-          guardMax: 8,
+          guardMin: guard.min,
+          guardMax: guard.max,
         },
       })
     }
 
-    const bottle = await server.prisma.bottle.create({
-      data: {
-        vintage: body.vintage,
-        rowPosition: body.rowPosition,
-        columnPosition: body.columnPosition,
-        cellarId: body.cellarId,
-        wineReferenceId: wineReference.id,
-      },
-      include: { wineReference: true },
-    })
+    try {
+      const bottle = await server.prisma.bottle.create({
+        data: {
+          vintage: body.vintage,
+          price: body.price ?? null,
+          rowPosition: body.rowPosition,
+          columnPosition: body.columnPosition,
+          cellarId: body.cellarId,
+          wineReferenceId: wineReference.id,
+        },
+        include: { wineReference: true },
+      })
 
-    return reply.status(201).send(formatBottleResponse(bottle))
+      return reply.status(201).send(formatBottleResponse(bottle))
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        return reply.status(409).send({ error: 'Position already occupied' })
+      }
+      throw error
+    }
   })
 
   // PATCH /api/bottles/:id/move
   server.patch('/api/bottles/:id/move', async (request, reply) => {
-    const { id } = request.params as { id: string }
+    const { id } = bottleParamsSchema.parse(request.params)
     const body = moveBottleSchema.parse(request.body)
 
     const bottle = await server.prisma.bottle.findUnique({ where: { id } })
@@ -115,36 +119,29 @@ const bottlesRoutes: FastifyPluginAsync = async (server) => {
       return reply.status(404).send({ error: 'Bottle not found' })
     }
 
-    const conflict = await server.prisma.bottle.findUnique({
-      where: {
-        cellarId_rowPosition_columnPosition: {
-          cellarId: bottle.cellarId,
+    try {
+      const updated = await server.prisma.bottle.update({
+        where: { id },
+        data: {
           rowPosition: body.rowPosition,
           columnPosition: body.columnPosition,
         },
-      },
-    })
+        include: { wineReference: true },
+      })
 
-    if (conflict && conflict.id !== id) {
-      return reply.status(409).send({ error: 'Target position already occupied' })
+      return formatBottleResponse(updated)
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        return reply.status(409).send({ error: 'Target position already occupied' })
+      }
+      throw error
     }
-
-    const updated = await server.prisma.bottle.update({
-      where: { id },
-      data: {
-        rowPosition: body.rowPosition,
-        columnPosition: body.columnPosition,
-      },
-      include: { wineReference: true },
-    })
-
-    return formatBottleResponse(updated)
   })
 
   // PATCH /api/bottles/:id/status
   server.patch('/api/bottles/:id/status', async (request, reply) => {
-    const { id } = request.params as { id: string }
-    const { status } = request.body as { status: 'STORED' | 'CONSUMED' | 'GIFTED' }
+    const { id } = bottleParamsSchema.parse(request.params)
+    const { status } = updateBottleStatusSchema.parse(request.body)
 
     const bottle = await server.prisma.bottle.findUnique({ where: { id } })
 
@@ -165,43 +162,42 @@ const bottlesRoutes: FastifyPluginAsync = async (server) => {
   })
 }
 
-function formatBottleResponse(bottle: {
-  id: string
-  vintage: number
-  purchaseDate: Date | null
-  price: { toNumber: () => number } | null
-  rowPosition: number
-  columnPosition: number
-  status: string
-  notes: string | null
-  wineReference: {
-    name: string
-    winery: string
-    grape: string
-    region: string
-    country: string
-  }
-}) {
-  const evolution = calculateEvolution(bottle.vintage, bottle.wineReference.grape)
+type WineReferenceRow = Prisma.WineReferenceGetPayload<object>
 
-  return {
-    id: bottle.id,
-    vintage: bottle.vintage,
-    purchaseDate: bottle.purchaseDate?.toISOString() ?? null,
-    price: bottle.price ? Number(bottle.price) : null,
-    rowPosition: bottle.rowPosition,
-    columnPosition: bottle.columnPosition,
-    status: bottle.status,
-    notes: bottle.notes,
-    wine: {
-      name: bottle.wineReference.name,
-      winery: bottle.wineReference.winery,
-      grape: bottle.wineReference.grape,
-      region: bottle.wineReference.region,
-      country: bottle.wineReference.country,
-    },
-    evolution,
+/**
+ * Resolves an existing WineReference by barcode first, then by fuzzy trigram
+ * match against the OCR text. Returns null when nothing confident is found.
+ */
+async function resolveWineReference(
+  server: FastifyInstance,
+  body: { barcode: string | null; rawOcrText: string | null },
+): Promise<WineReferenceRow | null> {
+  if (body.barcode) {
+    const byBarcode = await server.prisma.wineReference.findUnique({
+      where: { barcode: body.barcode },
+    })
+    if (byBarcode) return byBarcode
   }
+
+  if (body.rawOcrText) {
+    const matches = await server.prisma.$queryRaw<
+      Array<{ id: string; similarity: number }>
+    >`
+      SELECT id, similarity(name, ${body.rawOcrText}) AS similarity
+      FROM "WineReference"
+      WHERE name % ${body.rawOcrText}
+      ORDER BY similarity DESC
+      LIMIT 1
+    `
+
+    if (matches.length > 0 && matches[0].similarity > 0.3) {
+      return server.prisma.wineReference.findUnique({
+        where: { id: matches[0].id },
+      })
+    }
+  }
+
+  return null
 }
 
 export default bottlesRoutes

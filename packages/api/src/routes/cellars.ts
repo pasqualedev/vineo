@@ -1,5 +1,10 @@
 import type { FastifyPluginAsync } from 'fastify'
+import { z } from 'zod'
 import { createCellarSchema } from '@vineo/shared'
+import { formatBottleResponse } from '../lib/format-bottle'
+
+const cellarParamsSchema = z.object({ id: z.string().uuid() })
+const listCellarsQuerySchema = z.object({ userId: z.string().uuid().optional() })
 
 const cellarsRoutes: FastifyPluginAsync = async (server) => {
   // POST /api/cellars
@@ -26,7 +31,7 @@ const cellarsRoutes: FastifyPluginAsync = async (server) => {
 
   // GET /api/cellars
   server.get('/api/cellars', async (request) => {
-    const { userId } = request.query as { userId?: string }
+    const { userId } = listCellarsQuerySchema.parse(request.query)
 
     const where = userId ? { userId } : {}
 
@@ -46,7 +51,7 @@ const cellarsRoutes: FastifyPluginAsync = async (server) => {
 
   // GET /api/cellars/:id
   server.get('/api/cellars/:id', async (request, reply) => {
-    const { id } = request.params as { id: string }
+    const { id } = cellarParamsSchema.parse(request.params)
 
     const cellar = await server.prisma.cellar.findUnique({
       where: { id },
@@ -62,7 +67,14 @@ const cellarsRoutes: FastifyPluginAsync = async (server) => {
       return reply.status(404).send({ error: 'Cellar not found' })
     }
 
-    return cellar
+    return {
+      id: cellar.id,
+      name: cellar.name,
+      rows: cellar.rows,
+      columns: cellar.columns,
+      createdAt: cellar.createdAt.toISOString(),
+      bottles: cellar.bottles.map(formatBottleResponse),
+    }
   })
 }
 

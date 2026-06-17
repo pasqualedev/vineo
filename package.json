@@ -14,7 +14,8 @@
     "db:push": "npm run db:push --workspace=@vineo/api",
     "db:reset": "docker compose down -v && docker compose up -d --wait db && npm run db:push --workspace=@vineo/api",
     "lint": "turbo lint",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "test": "turbo test"
   },
   "overrides": {
     "react": "19.2.3"

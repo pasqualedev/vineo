@@ -47,3 +47,26 @@ export function getCurrentStatus(
   if (currentYear <= maxDrinkingYear) return 'PEAK'
   return 'DECLINING'
 }
+
+/**
+ * Single source of truth for a bottle's drinking window and current maturation
+ * status. Combines {@link calculateEvolutionYears} and {@link getCurrentStatus}
+ * so the API and client never reimplement the rule.
+ *
+ * @param vintage - Harvest year of the wine.
+ * @param grape - Grape variety, used to look up the guard rule.
+ * @param currentYear - Reference year (defaults to the current year).
+ */
+export function calculateEvolution(
+  vintage: number,
+  grape: string,
+  currentYear: number = new Date().getFullYear(),
+): {
+  startDrinkingYear: number
+  maxDrinkingYear: number
+  currentStatus: 'EVOLVING' | 'PEAK' | 'DECLINING'
+} {
+  const { startDrinkingYear, maxDrinkingYear } = calculateEvolutionYears(vintage, grape)
+  const currentStatus = getCurrentStatus(vintage, grape, currentYear)
+  return { startDrinkingYear, maxDrinkingYear, currentStatus }
+}
