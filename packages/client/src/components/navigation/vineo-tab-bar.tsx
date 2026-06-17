@@ -11,7 +11,7 @@ type BottomTabBarProps = Parameters<
 >[0];
 
 const FAB_SIZE = 60;
-const BAR_HEIGHT = 64;
+const BAR_HEIGHT = 44;
 const ICON_SIZE = 24;
 
 const TAB_LABELS: Readonly<Record<string, string>> = {
